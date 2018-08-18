@@ -1,0 +1,33 @@
+target/
+boot/
+lib_managed/
+src_managed/
+project/plugins/project/
+/.idea
+### Java template
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*application.conf
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# api-console raml render library
+/src/main/resources/raml/assets
+
+/native
+project/project/
+sbt
+
+.hydra
+project/hydra.sbt
+
+# frontend
+argos-frontend/lib/argos-frontend-opt.js
+node_modules/
+argos-frontend/lib/resources/
