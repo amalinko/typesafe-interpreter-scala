@@ -2,6 +2,7 @@ package com.interpreter
 import com.interpreter.Tf.Term.{Eval, StringView, TreeView}
 
 import scala.language.higherKinds
+import scala.util.Try
 
 object Tf extends App {
 
@@ -67,6 +68,12 @@ object Tf extends App {
         TreeView(Node("IfElse", List(condition.value, x.value, y.value)))
 
     }
+
+    def fromTree[F[_], A](tree: Tree)(implicit T: Term[F]):Either[String, F[A]] = tree match {
+      case Node("Lit", Leaf(value) :: Nil) =>parseInt(value).map(T.lit)
+    }
+
+    private def parseInt(x: String): Either[String, Int] = Try(x.toInt).toOption.toRight(s"Unable to parse $x")
 
   }
 
