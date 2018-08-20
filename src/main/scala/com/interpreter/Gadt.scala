@@ -1,6 +1,6 @@
 package com.interpreter
 
-object TypedAdt extends App {
+object Gadt extends App {
 
   sealed trait Term[A]
   case class Lit(x: Int) extends Term[Int]

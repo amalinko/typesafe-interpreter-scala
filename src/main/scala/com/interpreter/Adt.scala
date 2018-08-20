@@ -1,6 +1,6 @@
 package com.interpreter
 
-object NaiveAdt extends App {
+object Adt extends App {
 
   sealed trait Term
   case class Lit(x: Int) extends Term
