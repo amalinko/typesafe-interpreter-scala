@@ -1,5 +1,5 @@
 package com.interpreter
-import com.interpreter.Tf.Term.{Eval, View}
+import com.interpreter.Tf.Term.{Eval, StringView, TreeView}
 
 import scala.language.higherKinds
 
@@ -21,7 +21,7 @@ object Tf extends App {
 
     case class Eval[A](value: A)
 
-    implicit val intEvaluator: Term[Eval] = new Term[Eval] {
+    implicit val evaluator: Term[Eval] = new Term[Eval] {
 
       override def lit(x: Int): Eval[Int] = Eval(x)
 
@@ -34,27 +34,46 @@ object Tf extends App {
 
     }
 
-    case class View[A](value: String)
+    case class StringView[A](value: String)
 
-    implicit val printer: Term[View] = new Term[View] {
+    implicit val stringSerializer: Term[StringView] = new Term[StringView] {
 
-      override def lit(x: Int): View[Int] = View(x.toString)
+      override def lit(x: Int): StringView[Int] = StringView(x.toString)
 
-      override def add(x: View[Int], y: View[Int]): View[Int] = View(s"(${x.value} + ${y.value})")
+      override def add(x: StringView[Int], y: StringView[Int]): StringView[Int] =
+        StringView(s"(${x.value} + ${y.value})")
 
-      override def gt(x: View[Int], y: View[Int]): View[Boolean] = View(s"${x.value} > ${y.value}")
+      override def gt(x: StringView[Int], y: StringView[Int]): StringView[Boolean] =
+        StringView(s"${x.value} > ${y.value}")
 
-      override def ifElse[A](condition: View[Boolean], x: View[A], y: View[A]): View[A] =
-        View(s"if(${condition.value}) ${x.value} else ${y.value}")
+      override def ifElse[A](condition: StringView[Boolean], x: StringView[A], y: StringView[A]): StringView[A] =
+        StringView(s"if(${condition.value}) ${x.value} else ${y.value}")
+
+    }
+
+    case class TreeView[A](value: Tree)
+
+    implicit val treeSerializer: Term[TreeView] = new Term[TreeView] {
+
+      override def lit(x: Int): TreeView[Int] = TreeView(Node("Lit", List(Leaf(x.toString))))
+
+      override def add(x: TreeView[Int], y: TreeView[Int]): TreeView[Int] =
+        TreeView(Node("Add", List(x.value, y.value)))
+
+      override def gt(x: TreeView[Int], y: TreeView[Int]): TreeView[Boolean] =
+        TreeView(Node("Gt", List(x.value, y.value)))
+
+      override def ifElse[A](condition: TreeView[Boolean], x: TreeView[A], y: TreeView[A]): TreeView[A] =
+        TreeView(Node("IfElse", List(condition.value, x.value, y.value)))
 
     }
 
   }
 
-  def addTenAndFive[F[_]](x: Int)(implicit T: Term[F]): F[Int] = {
+  def expression[F[_]](x: Int)(implicit T: Term[F]): F[Int] =
     T.ifElse(T.gt(T.lit(x), T.lit(5)), T.lit(x), T.add(T.add(T.lit(x), T.lit(10)), T.lit(5)))
-  }
 
-  println(addTenAndFive[Eval](3).value)
-  println(addTenAndFive[View](3).value)
+  println(expression[Eval](3).value)
+  println(expression[StringView](3).value)
+  println(expression[TreeView](3).value)
 }

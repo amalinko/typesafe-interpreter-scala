@@ -18,9 +18,9 @@ object TfNaive extends App {
     }
   }
 
-  def addTenAndFive[A](x: Int)(implicit T: Term[A]): A = T.add(T.add(T.lit(x), T.lit(10)), T.lit(5))
+  def expression[A](x: Int)(implicit T: Term[A]): A = T.add(T.add(T.lit(x), T.lit(10)), T.lit(5))
 
-  println(addTenAndFive[String](10))
-  println(addTenAndFive[Int](10))
+  println(expression[String](10))
+  println(expression[Int](10))
 
 }
