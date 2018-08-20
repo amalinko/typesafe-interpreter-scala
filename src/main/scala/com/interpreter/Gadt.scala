@@ -15,15 +15,31 @@ object Gadt extends App {
     case IfElse(condition, x, y) => if (eval(condition)) eval(x) else eval(y)
   }
 
-  def show[A](term: Term[A]): String = term match {
-    case Lit(x) => x.toString
-    case Add(x, y) => s"(${show(x)} + ${show(y)})"
-    case Gt(x, y) => s"${show(x)} > ${show(y)}"
-    case IfElse(condition, x, y) => s"if(${show(condition)}) ${show(x)} else ${show(y)}"
+  def serializeToString[_](term: Term[_]): String = term match {
+    case Lit(x) =>
+      x.toString
+    case Add(x, y) =>
+      s"(${serializeToString(x)} + ${serializeToString(y)})"
+    case Gt(x, y) =>
+      s"${serializeToString(x)} > ${serializeToString(y)}"
+    case IfElse(condition, x, y) =>
+      s"if(${serializeToString(condition)}) ${serializeToString(x)} else ${serializeToString(y)}"
+  }
+
+  def serializeToTree[_](term: Term[_]): Tree = term match {
+    case Lit(x) =>
+      Node("Lit", List(Leaf(x.toString)))
+    case Add(x, y) =>
+      Node("Add", List(serializeToTree(x), serializeToTree(y)))
+    case Gt(x, y) =>
+      Node("Gt", List(serializeToTree(x), serializeToTree(y)))
+    case IfElse(condition, x, y) =>
+      Node("IfElse", List(serializeToTree(condition), serializeToTree(x), serializeToTree(y)))
   }
 
   val expression = IfElse(Gt(Add(Lit(5), Lit(6)), Lit(5)), Add(Add(Lit(11), Lit(5)), Lit(5)), Lit(2))
   println(eval(expression))
-  println(show(expression))
+  println(serializeToString(expression))
+  println(serializeToTree(expression))
 
 }
