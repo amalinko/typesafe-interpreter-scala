@@ -11,8 +11,13 @@ object NaiveAdt extends App {
     case Add(x, y) => eval(x) + eval(y)
   }
 
+  def show(term: Term): String = term match {
+    case Lit(x) => x.toString
+    case Add(x, y) => s"(${show(x)} + ${show(y)})"
+  }
+
   val expression = Add(Add(Lit(10), Lit(5)), Lit(5))
-  val result = eval(expression)
-  println(result)
+  println(eval(expression))
+  println(show(expression))
 
 }
