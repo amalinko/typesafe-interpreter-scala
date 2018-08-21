@@ -69,9 +69,21 @@ object Tf extends App {
 
     }
 
-    def fromTree[F[_], A](tree: Tree)(implicit T: Term[F]):Either[String, F[A]] = tree match {
-      case Node("Lit", Leaf(value) :: Nil) =>parseInt(value).map(T.lit)
-    }
+
+//    def fromTree[F[_], A](tree: Tree)(implicit T: Term[F]): Either[String, F[A]] = tree match {
+//      case Node("Lit", Leaf(value) :: Nil) =>
+//        parseInt(value).map(T.lit)
+//      case Node("Add", xLeaf :: yLeaf :: Nil) =>
+//        for {
+//          x <- fromTree[F, Int](xLeaf)
+//          y <- fromTree[F, Int](yLeaf)
+//        } yield T.add(x, y)
+//      case Node("Gt", xLeaf :: yLeaf :: Nil) =>
+//        for {
+//          x <- fromTree[F, Int](xLeaf)
+//          y <- fromTree[F, Int](yLeaf)
+//        } yield T.gt(x, y)
+//    }
 
     private def parseInt(x: String): Either[String, Int] = Try(x.toInt).toOption.toRight(s"Unable to parse $x")
 
