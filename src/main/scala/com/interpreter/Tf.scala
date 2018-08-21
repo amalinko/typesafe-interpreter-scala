@@ -70,20 +70,49 @@ object Tf extends App {
     }
 
 
-//    def fromTree[F[_], A](tree: Tree)(implicit T: Term[F]): Either[String, F[A]] = tree match {
-//      case Node("Lit", Leaf(value) :: Nil) =>
-//        parseInt(value).map(T.lit)
-//      case Node("Add", xLeaf :: yLeaf :: Nil) =>
-//        for {
-//          x <- fromTree[F, Int](xLeaf)
-//          y <- fromTree[F, Int](yLeaf)
-//        } yield T.add(x, y)
-//      case Node("Gt", xLeaf :: yLeaf :: Nil) =>
-//        for {
-//          x <- fromTree[F, Int](xLeaf)
-//          y <- fromTree[F, Int](yLeaf)
-//        } yield T.gt(x, y)
-//    }
+    trait TermTyping[F[_], A] {
+      def fromBool(x: F[Boolean]): Either[String, F[A]]
+      def fromInt(x: F[Int]): Either[String, F[A]]
+    }
+
+    object TermTyping {
+      implicit def boolResult[F[_]] = new TermTyping[F, Boolean] {
+        override def fromBool(x: F[Boolean]) = Right(x)
+        override def fromInt(x: F[Int])      = Left("Type Error. Expected: Bool, got: Int")
+      }
+
+      implicit def intResult[F[_]] = new TermTyping[F, Int] {
+        override def fromBool(x: F[Boolean]) = Left("Type Error. Expected: Int, got: Bool")
+        override def fromInt(x: F[Int])      = Right(x)
+      }
+    }
+
+    def fromTree[F[_], A](tree: Tree)(implicit T: Term[F], tt: TermTyping[F, A]): Either[String, F[A]] = tree match {
+      case Node("Lit", Leaf(value) :: Nil) =>
+        for {
+          xi  <- parseInt(value)
+          res <- tt.fromInt(T.lit(xi))
+        } yield res
+      case Node("Add", xLeaf :: yLeaf :: Nil) =>
+        for {
+          x   <- fromTree[F, Int](xLeaf)
+          y   <- fromTree[F, Int](yLeaf)
+          res <- tt.fromInt(T.add(x, y))
+        } yield res
+      case Node("Gt", xLeaf :: yLeaf :: Nil) =>
+        for {
+          x   <- fromTree[F, Int](xLeaf)
+          y   <- fromTree[F, Int](yLeaf)
+          res <- tt.fromBool(T.gt(x, y))
+        } yield res
+      case Node("IfElse", cLeaf :: xLeaf :: yLeaf :: Nil) =>
+        for {
+          c <- fromTree[F, Boolean](cLeaf)
+          x <- fromTree[F, Int](xLeaf)
+          y <- fromTree[F, Int](yLeaf)
+          res <- tt.fromInt(T.ifElse(c, x, y))
+        } yield res
+    }
 
     private def parseInt(x: String): Either[String, Int] = Try(x.toInt).toOption.toRight(s"Unable to parse $x")
 
@@ -94,5 +123,8 @@ object Tf extends App {
 
   println(expression[Eval](3).value)
   println(expression[StringView](3).value)
-  println(expression[TreeView](3).value)
+  val tree: Tree = expression[TreeView](3).value
+  println(tree)
+
+  println(Term.fromTree[Eval, Int](tree))
 }
