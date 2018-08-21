@@ -69,40 +69,39 @@ object Tf extends App {
 
     }
 
-
     trait TermTyping[F[_], A] {
       def fromBool(x: F[Boolean]): Either[String, F[A]]
       def fromInt(x: F[Int]): Either[String, F[A]]
     }
 
     object TermTyping {
-      implicit def boolResult[F[_]] = new TermTyping[F, Boolean] {
+      implicit def boolResult[F[_]]: TermTyping[F, Boolean] = new TermTyping[F, Boolean] {
         override def fromBool(x: F[Boolean]) = Right(x)
-        override def fromInt(x: F[Int])      = Left("Type Error. Expected: Bool, got: Int")
+        override def fromInt(x: F[Int]) = Left("Type Error. Expected: Bool, got: Int")
       }
 
-      implicit def intResult[F[_]] = new TermTyping[F, Int] {
+      implicit def intResult[F[_]]: TermTyping[F, Int] = new TermTyping[F, Int] {
         override def fromBool(x: F[Boolean]) = Left("Type Error. Expected: Int, got: Bool")
-        override def fromInt(x: F[Int])      = Right(x)
+        override def fromInt(x: F[Int]) = Right(x)
       }
     }
 
     def fromTree[F[_], A](tree: Tree)(implicit T: Term[F], tt: TermTyping[F, A]): Either[String, F[A]] = tree match {
       case Node("Lit", Leaf(value) :: Nil) =>
         for {
-          xi  <- parseInt(value)
+          xi <- parseInt(value)
           res <- tt.fromInt(T.lit(xi))
         } yield res
       case Node("Add", xLeaf :: yLeaf :: Nil) =>
         for {
-          x   <- fromTree[F, Int](xLeaf)
-          y   <- fromTree[F, Int](yLeaf)
+          x <- fromTree[F, Int](xLeaf)
+          y <- fromTree[F, Int](yLeaf)
           res <- tt.fromInt(T.add(x, y))
         } yield res
       case Node("Gt", xLeaf :: yLeaf :: Nil) =>
         for {
-          x   <- fromTree[F, Int](xLeaf)
-          y   <- fromTree[F, Int](yLeaf)
+          x <- fromTree[F, Int](xLeaf)
+          y <- fromTree[F, Int](yLeaf)
           res <- tt.fromBool(T.gt(x, y))
         } yield res
       case Node("IfElse", cLeaf :: xLeaf :: yLeaf :: Nil) =>
@@ -112,6 +111,7 @@ object Tf extends App {
           y <- fromTree[F, Int](yLeaf)
           res <- tt.fromInt(T.ifElse(c, x, y))
         } yield res
+      case other => Left(s"Unable to parse: $other")
     }
 
     private def parseInt(x: String): Either[String, Int] = Try(x.toInt).toOption.toRight(s"Unable to parse $x")
