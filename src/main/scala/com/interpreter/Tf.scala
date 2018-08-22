@@ -16,6 +16,10 @@ object Tf extends App {
 
     def ifElse[A](condition: F[Boolean], x: F[A], y: F[A]): F[A]
 
+    def func[A, B](a: F[A], f: F[A] => F[B]): F[B]
+
+    def app[A, B](f: F[A] => F[B]): F[A => B]
+
   }
 
   object Term {
@@ -33,6 +37,9 @@ object Tf extends App {
 
       override def gt(x: Eval[Int], y: Eval[Int]): Eval[Boolean] = Eval(x.value > y.value)
 
+      override def func[A, B](a: Eval[A], f: Eval[A] => Eval[B]): Eval[B] = Eval(f(a).value)
+
+      override def app[A, B](f: Eval[A] => Eval[B]): Eval[A => B] = Eval((a: A) => f(Eval(a)).value)
     }
 
     case class StringView[A](value: String)
@@ -50,6 +57,9 @@ object Tf extends App {
       override def ifElse[A](condition: StringView[Boolean], x: StringView[A], y: StringView[A]): StringView[A] =
         StringView(s"if(${condition.value}) ${x.value} else ${y.value}")
 
+      override def func[A, B](a: StringView[A], f: StringView[A] => StringView[B]): StringView[B] = ???
+
+      override def app[A, B](f: StringView[A] => StringView[B]): StringView[A => B] = ???
     }
 
     case class TreeView[A](value: Tree)
@@ -67,6 +77,9 @@ object Tf extends App {
       override def ifElse[A](condition: TreeView[Boolean], x: TreeView[A], y: TreeView[A]): TreeView[A] =
         TreeView(Node("IfElse", List(condition.value, x.value, y.value)))
 
+      override def func[A, B](a: TreeView[A], f: TreeView[A] => TreeView[B]): TreeView[B] = ???
+
+      override def app[A, B](f: TreeView[A] => TreeView[B]): TreeView[A => B] = ???
     }
 
     trait TermTyping[F[_], A] {
@@ -120,6 +133,12 @@ object Tf extends App {
 
   def expression[F[_]](x: Int)(implicit T: Term[F]): F[Int] =
     T.ifElse(T.gt(T.lit(x), T.lit(5)), T.lit(x), T.add(T.add(T.lit(x), T.lit(10)), T.lit(5)))
+
+  def fExp[F[_]](implicit T: Term[F]): F[Int => Int] = T.app((v: F[Int]) => T.add(v, T.lit(10)))
+
+
+  val l = fExp[Eval]
+  println(l.value(3))
 
   println(expression[Eval](3).value)
   println(expression[StringView](3).value)
